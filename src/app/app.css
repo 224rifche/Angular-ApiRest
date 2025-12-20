@@ -1,0 +1,4 @@
+/* Styles spécifiques au composant App */
+:host {
+  display: block;
+}
