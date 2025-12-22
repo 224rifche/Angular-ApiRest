@@ -1,0 +1,58 @@
+<div class="pokemon-container">
+  <h1>Liste des pokémons</h1>
+
+  @if (!loading && !error) {
+    <div class="filters">
+      <div class="field">
+        <label for="search">Recherche</label>
+        <input
+          id="search"
+          type="text"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onFiltersChange()"
+          placeholder="Rechercher un pokémon...">
+      </div>
+
+      <div class="field field-inline">
+        <div class="count">
+          {{ filteredPokemons.length }} pokémons
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loading) {
+    <div class="loading">
+      <p>Chargement des pokémons...</p>
+    </div>
+  }
+
+  @if (error) {
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+  }
+
+  @if (!loading && !error) {
+    <div class="pokemon-grid">
+      @for (p of pagedPokemons; track p.name) {
+        <a class="pokemon-card" [routerLink]="['/pokemons', p.name]" (mouseenter)="prefetchDetail(p.name)">
+          <div class="pokemon-thumb">
+            <img [src]="p.image" [alt]="p.name" loading="lazy">
+          </div>
+          <div class="pokemon-info">
+            <h2>{{ p.name }}</h2>
+          </div>
+        </a>
+      }
+    </div>
+
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button type="button" (click)="prevPage()" [disabled]="currentPage === 1">Précédent</button>
+        <div class="page-info">Page {{ currentPage }} / {{ totalPages }}</div>
+        <button type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Suivant</button>
+      </div>
+    }
+  }
+</div>

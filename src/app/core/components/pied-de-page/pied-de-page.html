@@ -1,31 +1,52 @@
 <footer class="site-footer">
-  <div class="footer-content">
-    <div class="footer-section">
-      <h3>À propos</h3>
-      <p>Découvrez les pays du monde et leurs caractéristiques uniques.</p>
-    </div>
-    
-    <div class="footer-section">
-      <h3>Navigation</h3>
-      <ul class="footer-links">
-        <li><a routerLink="/">Accueil</a></li>
-        <li><a routerLink="/pays">Pays</a></li>
-        <li><a routerLink="/pokemons">Pokémons</a></li>
-      </ul>
-    </div>
-    
-    <div class="footer-section">
-      <h3>Contact</h3>
-      <p>Email: cherif21975@gmail.com</p>
-      <div class="social-links">
-        <a href="#" class="social-icon">Facebook</a>
-        <a href="#" class="social-icon">Twitter</a>
-        <a href="#" class="social-icon">Instagram</a>
+  <div class="footer-container">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>PokéMonde & Pays</h3>
+        <p class="muted">
+          Explore le monde: pays, drapeaux, météo et pokémons.
+        </p>
+        <div class="quick-actions">
+          <a class="btn" routerLink="/pays">Explorer les pays</a>
+          <a class="btn ghost" routerLink="/pokemons">Voir les pokémons</a>
+        </div>
+      </div>
+
+      <div class="footer-section">
+        <h3>Navigation</h3>
+        <ul class="footer-links">
+          <li><a routerLink="/">Accueil</a></li>
+          <li><a routerLink="/pays">Pays</a></li>
+          <li><a routerLink="/pokemons">Pokémons</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Sources API</h3>
+        <ul class="footer-links">
+          <li><a href="https://restcountries.com/" target="_blank" rel="noopener noreferrer">Rest Countries</a></li>
+          <li><a href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></li>
+          <li><a href="https://pokeapi.co/" target="_blank" rel="noopener noreferrer">PokeAPI</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Contact</h3>
+        <p class="muted">
+          <a class="inline-link" href="mailto:cherif21975@gmail.com">cherif21975@gmail.com</a>
+        </p>
+        <div class="social-links">
+          <a href="#" class="social-icon" aria-label="Facebook">Facebook</a>
+          <a href="#" class="social-icon" aria-label="Twitter">Twitter</a>
+          <a href="#" class="social-icon" aria-label="Instagram">Instagram</a>
+        </div>
       </div>
     </div>
-  </div>
-  
-  <div class="footer-bottom">
-    <p>&copy; {{ currentYear }} PokéMonde. Tous droits réservés.</p>
+
+    <div class="footer-bottom">
+      <p> {{ currentYear }} PokéMonde & Pays</p>
+      <span class="dot">•</span>
+      <p class="muted">Fait avec Angular</p>
+    </div>
   </div>
 </footer>

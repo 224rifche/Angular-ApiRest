@@ -10,6 +10,56 @@ h1 {
   color: #2c3e50;
 }
 
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 260px 160px;
+  gap: 1rem;
+  align-items: end;
+  margin: 0 auto 1rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+
+.field label {
+  display: block;
+  font-size: 0.9rem;
+  color: #445;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid #dde3ea;
+  outline: none;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52,152,219,0.15);
+}
+
+.field-inline {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.count {
+  font-weight: 700;
+  color: #2c3e50;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+}
+
 .loading, .error {
   text-align: center;
   padding: 2rem;
@@ -28,11 +78,14 @@ h1 {
 }
 
 .pays-card {
+  display: block;
   background: white;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+  color: inherit;
 }
 
 .pays-card:hover {
@@ -75,8 +128,39 @@ h1 {
   color: #555;
 }
 
+.pagination {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0 0.5rem;
+}
+
+.pagination button {
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #dde3ea;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-weight: 700;
+  color: #2c3e50;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
   .pays-grid {
     grid-template-columns: 1fr;
   }

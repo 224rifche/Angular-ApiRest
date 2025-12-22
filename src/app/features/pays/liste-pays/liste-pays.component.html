@@ -1,5 +1,35 @@
 <div class="pays-container">
   <h1>Liste des pays</h1>
+
+  @if (!loading && !error) {
+    <div class="filters">
+      <div class="field">
+        <label for="search">Recherche</label>
+        <input
+          id="search"
+          type="text"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onFiltersChange()"
+          placeholder="Rechercher un pays...">
+      </div>
+
+      <div class="field">
+        <label for="region">Continent / Région</label>
+        <select id="region" [(ngModel)]="selectedRegion" (change)="onFiltersChange()">
+          <option value="">Tous</option>
+          @for (r of regions; track r) {
+            <option [value]="r">{{ r }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field field-inline">
+        <div class="count">
+          {{ filteredPays.length }} pays
+        </div>
+      </div>
+    </div>
+  }
   
   @if (loading) {
     <div class="loading">
@@ -15,22 +45,25 @@
 
   @if (!loading && !error) {
     <div class="pays-grid">
-      @for (pays of paysList; track trackPays($index, pays)) {
-        <div class="pays-card">
+      @for (pays of pagedPays; track trackPays($index, pays)) {
+        <a class="pays-card" [routerLink]="['/pays', pays.cca3]" (mouseenter)="prefetchDetail(pays.cca3)">
           <div class="pays-flag">
             <img [src]="pays.flags.png" [alt]="'Drapeau de ' + pays.name.common" loading="lazy">
           </div>
           <div class="pays-info">
             <h2>{{ pays.name.common }}</h2>
-            <p><strong>Capitale :</strong> {{ pays.capital?.[0] || 'Non spécifiée' }}</p>
-            <p><strong>Région :</strong> {{ pays.region }}</p>
-            <p><strong>Population :</strong> {{ pays.population | number }}</p>
-            @if (pays.languages) {
-              <p><strong>Langues :</strong> {{ getLanguages(pays.languages) }}</p>
-            }
+            <p><strong>Région :</strong> {{ pays.region || '—' }}</p>
           </div>
-        </div>
+        </a>
       }
     </div>
+
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button type="button" (click)="prevPage()" [disabled]="currentPage === 1">Précédent</button>
+        <div class="page-info">Page {{ currentPage }} / {{ totalPages }}</div>
+        <button type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Suivant</button>
+      </div>
+    }
   }
 </div>
