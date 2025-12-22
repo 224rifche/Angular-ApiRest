@@ -1,0 +1,36 @@
+<div class="pays-container">
+  <h1>Liste des pays</h1>
+  
+  @if (loading) {
+    <div class="loading">
+      <p>Chargement des pays...</p>
+    </div>
+  }
+
+  @if (error) {
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+  }
+
+  @if (!loading && !error) {
+    <div class="pays-grid">
+      @for (pays of paysList; track trackPays($index, pays)) {
+        <div class="pays-card">
+          <div class="pays-flag">
+            <img [src]="pays.flags.png" [alt]="'Drapeau de ' + pays.name.common" loading="lazy">
+          </div>
+          <div class="pays-info">
+            <h2>{{ pays.name.common }}</h2>
+            <p><strong>Capitale :</strong> {{ pays.capital?.[0] || 'Non spécifiée' }}</p>
+            <p><strong>Région :</strong> {{ pays.region }}</p>
+            <p><strong>Population :</strong> {{ pays.population | number }}</p>
+            @if (pays.languages) {
+              <p><strong>Langues :</strong> {{ getLanguages(pays.languages) }}</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

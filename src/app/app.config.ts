@@ -1,29 +1,18 @@
-import { ApplicationConfig, ɵConsole as Console } from '@angular/core';
-import { provideRouter, withDebugTracing, withRouterConfig } from '@angular/router';
+// src/app/app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideClientHydration } from '@angular/platform-browser';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 import { routes } from './app.routes';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-
-// Active le débogage du routeur
-const routerConfig = withRouterConfig({
-  onSameUrlNavigation: 'reload',
-  paramsInheritanceStrategy: 'always'
-});
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    // Active le traçage des routes dans la console
     provideRouter(
       routes,
-      withDebugTracing(), // Activation du traçage détaillé
-      routerConfig
+      withComponentInputBinding()
+      // ❌ SUPPRIMER: withDebugTracing() en production
     ),
-    provideClientHydration(withEventReplay()),
-    // Ajoute le service de console pour le débogage
-    { provide: Console, useClass: class extends Console { 
-      constructor() { 
-        super();
-        console.log('Console de débogage initialisée');
-      }
-    }}
+    provideClientHydration(),
+    provideHttpClient(withFetch())
   ]
 };

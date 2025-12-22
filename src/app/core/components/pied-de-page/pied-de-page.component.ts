@@ -1,19 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-pied-de-page',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <footer class="bg-gray-800 text-white py-6">
-      <div class="container mx-auto px-6 text-center">
-        <p>© {{ currentYear }} Pokémons & Pays - Tous droits réservés</p>
-      </div>
-    </footer>
-  `,
-  styles: []
+  imports: [CommonModule, RouterLink],
+  templateUrl: './pied-de-page.html',
+  styleUrls: ['./pied-de-page.css']
 })
 export class PiedDePageComponent {
-  currentYear = new Date().getFullYear();
+  currentYear: number = new Date().getFullYear();
 }
