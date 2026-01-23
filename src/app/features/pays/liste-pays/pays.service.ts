@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, retry, shareReplay, tap, throwError, timeout, timer } from 'rxjs';
+import { Observable, catchError, of, retry, shareReplay, tap, throwError, timeout, timer } from 'rxjs';
 
 export interface Pays {
   name: {
@@ -46,6 +46,16 @@ export class PaysService {
         .pipe(
           tap((list) => {
             this.paysListCache = list;
+          }),
+          catchError((error: HttpErrorResponse) => {
+            console.error('Erreur lors de la récupération des pays:', error);
+            // Si on a des données en cache, on les retourne avec un warning
+            if (this.paysListCache) {
+              console.warn('Utilisation des données en cache suite à une erreur de chargement');
+              return of(this.paysListCache);
+            }
+            // Sinon, on propage l'erreur
+            return throwError(() => new Error('Impossible de charger les pays. Vérifiez votre connexion internet.'));
           }),
           shareReplay(1)
         );

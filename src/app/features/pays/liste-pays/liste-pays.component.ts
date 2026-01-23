@@ -2,13 +2,13 @@
 import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { Pays, PaysService } from './pays.service';
 
 @Component({
   selector: 'app-liste-pays',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './liste-pays.component.html',
   styleUrls: ['./liste-pays.component.css']
 })
@@ -93,15 +93,29 @@ export class ListePaysComponent implements OnInit {
   }
 
   private loadPays(): void {
+    this.loading = true;
+    this.error = '';
+    
     this.paysService.getPays().subscribe({
       next: (data) => {
-        this.paysList = [...data].sort((a, b) => a.name.common.localeCompare(b.name.common));
+        if (data && data.length > 0) {
+          this.paysList = [...data].sort((a, b) => a.name.common.localeCompare(b.name.common));
+          this.currentPage = 1;
+        } else {
+          this.error = 'Aucune donnée de pays disponible.';
+        }
         this.loading = false;
-        this.currentPage = 1;
       },
-      error: (err) => {
-        this.error = 'Impossible de charger les pays. Veuillez réessayer plus tard.';
+      error: (err: Error) => {
+        console.error('Erreur lors du chargement des pays', err);
+        this.error = err.message || 'Erreur lors du chargement des pays. Veuillez vérifier votre connexion internet.';
         this.loading = false;
+        
+        // Réessayer après 5 secondes
+        setTimeout(() => {
+          console.log('Nouvelle tentative de chargement...');
+          this.loadPays();
+        }, 5000);
 
         if (isPlatformBrowser(this.platformId)) {
           console.error('Erreur API:', err);

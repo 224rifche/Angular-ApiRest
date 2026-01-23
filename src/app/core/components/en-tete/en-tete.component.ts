@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-en-tete',
@@ -10,13 +13,21 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./en-tete.css']
 })
 export class EnTeteComponent {
-  isMenuOpen = false;
+  isLoggedIn$: Observable<boolean>;
+  isAdmin$: Observable<boolean>;
 
-  toggleMenu(): void {
-    this.isMenuOpen = !this.isMenuOpen;
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {
+    this.isLoggedIn$ = this.authService.currentUser$.pipe(map(user => !!user));
+    this.isAdmin$ = this.authService.currentUser$.pipe(
+      map(user => !!user?.is_staff)
+    );
   }
 
-  closeMenu(): void {
-    this.isMenuOpen = false;
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

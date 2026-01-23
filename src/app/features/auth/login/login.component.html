@@ -1,0 +1,31 @@
+<section class="login">
+  <div class="card">
+    <h1>Connexion</h1>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" />
+      </div>
+
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input id="password" type="password" formControlName="password" />
+      </div>
+
+      <label class="remember">
+        <input type="checkbox" formControlName="rememberMe" />
+        Rester connecté
+      </label>
+
+      <div class="error" *ngIf="error">{{ error }}</div>
+
+      <button class="btn" type="submit" [disabled]="loading">Se connecter</button>
+    </form>
+
+    <p class="alt">
+      Pas de compte ?
+      <a [routerLink]="['/register']" [queryParams]="{ returnUrl: returnUrl }">Créer un compte</a>
+    </p>
+  </div>
+</section>

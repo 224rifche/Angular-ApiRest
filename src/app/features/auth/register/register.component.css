@@ -1,0 +1,56 @@
+.login {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: min(420px, 92vw);
+  padding: 1.25rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0;
+}
+
+input[type="email"],
+input[type="password"] {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.18);
+}
+
+.error {
+  color: #b00020;
+  margin: 0.5rem 0;
+}
+
+.btn {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 0;
+  border-radius: 10px;
+  background: #111827;
+  color: #fff;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.alt {
+  margin-top: 0.75rem;
+}
+
+.alt a {
+  color: #111827;
+  text-decoration: underline;
+}

@@ -1,0 +1,31 @@
+<section class="login">
+  <div class="card">
+    <h1>Créer un compte</h1>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" />
+      </div>
+
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input id="password" type="password" formControlName="password" />
+      </div>
+
+      <div class="field">
+        <label for="password2">Confirmer le mot de passe</label>
+        <input id="password2" type="password" formControlName="password2" />
+      </div>
+
+      <div class="error" *ngIf="error">{{ error }}</div>
+
+      <button class="btn" type="submit" [disabled]="loading">Créer le compte</button>
+    </form>
+
+    <p class="alt">
+      Déjà un compte ?
+      <a [routerLink]="['/login']" [queryParams]="{ returnUrl: returnUrl }">Se connecter</a>
+    </p>
+  </div>
+</section>
