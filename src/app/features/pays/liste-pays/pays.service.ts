@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, of, retry, shareReplay, tap, throwError, timeout, timer } from 'rxjs';
+import { Observable, BehaviorSubject, of, throwError, timer } from 'rxjs';
+import { catchError, retry, shareReplay, tap, timeout } from 'rxjs/operators';
 
 export interface Pays {
   name: {
@@ -33,35 +34,53 @@ export interface PaysDetail extends Pays {
 })
 export class PaysService {
   private apiUrl = 'https://restcountries.com/v3.1';
-  private paysAll$?: Observable<Pays[]>;
+  private paysListSubject = new BehaviorSubject<Pays[] | null>(null);
   private paysListCache: Pays[] | null = null;
   private paysDetailCache = new Map<string, Observable<PaysDetail>>();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) { 
+    // Chargement immédiat des données au démarrage
+    this.loadPaysInitial();
+  }
+
+  /**
+   * Charge les pays immédiatement au démarrage
+   */
+  private loadPaysInitial(): void {
+    this.http
+      .get<Pays[]>(`${this.apiUrl}/all?fields=name,cca3,flags,capital,region,population,languages`)
+      .pipe(
+        tap((list) => {
+          this.paysListCache = list;
+          this.paysListSubject.next(list);
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.error('Erreur lors du chargement initial des pays:', error);
+          this.paysListSubject.next([]);
+          return of([]);
+        })
+      )
+      .subscribe();
+  }
 
   getPays(): Observable<Pays[]> {
-    if (!this.paysAll$) {
-      this.paysAll$ = this.http
-        .get<Pays[]>(`${this.apiUrl}/all?fields=name,cca3,flags,capital,region,population,languages`)
-        .pipe(
-          tap((list) => {
-            this.paysListCache = list;
-          }),
-          catchError((error: HttpErrorResponse) => {
-            console.error('Erreur lors de la récupération des pays:', error);
-            // Si on a des données en cache, on les retourne avec un warning
-            if (this.paysListCache) {
-              console.warn('Utilisation des données en cache suite à une erreur de chargement');
-              return of(this.paysListCache);
-            }
-            // Sinon, on propage l'erreur
-            return throwError(() => new Error('Impossible de charger les pays. Vérifiez votre connexion internet.'));
-          }),
-          shareReplay(1)
-        );
+    // Si on a déjà des données en cache, on les retourne immédiatement
+    if (this.paysListCache && this.paysListCache.length > 0) {
+      return of(this.paysListCache);
     }
 
-    return this.paysAll$;
+    // Sinon, on s'abonne au BehaviorSubject
+    return new Observable(observer => {
+      const subscription = this.paysListSubject.subscribe(pays => {
+        if (pays !== null) {
+          observer.next(pays);
+          observer.complete();
+        }
+      });
+
+      // Nettoyage
+      return () => subscription.unsubscribe();
+    });
   }
 
   getPaysParNom(nom: string): Observable<Pays[]> {

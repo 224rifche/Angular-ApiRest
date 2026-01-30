@@ -9,7 +9,30 @@
       <li class="nav-item"><a routerLink="/pays" routerLinkActive="active" class="nav-link">Pays</a></li>
       <li class="nav-item" *ngIf="(isAdmin$ | async)"><a routerLink="/users" routerLinkActive="active" class="nav-link">Utilisateurs</a></li>
       <li class="nav-item" *ngIf="!(isLoggedIn$ | async)"><a routerLink="/login" routerLinkActive="active" class="nav-link">Connexion</a></li>
-      <li class="nav-item" *ngIf="(isLoggedIn$ | async)"><button type="button" class="nav-link" (click)="logout()">Déconnexion</button></li>
+      
+      <!-- Menu utilisateur connecté -->
+      <li class="nav-item user-menu" *ngIf="(isLoggedIn$ | async)">
+        <button type="button" class="nav-link user-menu-trigger" (click)="toggleUserMenu()">
+          Mon compte ▼
+        </button>
+        <div class="user-dropdown" *ngIf="showUserMenu">
+          <div class="user-info">
+            <strong>{{ (currentUser$ | async)?.email }}</strong>
+            <span class="user-role">{{ (isAdmin$ | async) ? 'Administrateur' : 'Utilisateur' }}</span>
+          </div>
+          <div class="dropdown-divider"></div>
+          <a routerLink="/mon-compte" class="dropdown-item">
+            👤 Mon profil
+          </a>
+          <button type="button" class="dropdown-item" (click)="resetMyPassword()">
+            🔑 Réinitialiser mon mot de passe
+          </button>
+          <div class="dropdown-divider"></div>
+          <button type="button" class="dropdown-item logout-btn" (click)="logout()">
+            🚪 Déconnexion
+          </button>
+        </div>
+      </li>
     </ul>
   </nav>
 </header>

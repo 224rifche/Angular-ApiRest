@@ -10,6 +10,7 @@ import { RegisterComponent } from './features/auth/register/register.component';
 import { UnauthorizedComponent } from './core/components/unauthorized/unauthorized.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { ListeUsersComponent } from './features/users/liste-users/liste-users.component';
+import { MonCompteComponent } from './features/auth/mon-compte/mon-compte.component';
 
 export const routes: Routes = [
   {
@@ -33,6 +34,12 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     data: { roles: ['admin'] },
     title: 'Utilisateurs'
+  },
+  {
+    path: 'mon-compte',
+    component: MonCompteComponent,
+    canActivate: [AuthGuard],
+    title: 'Mon Compte'
   },
   { 
     path: '',

@@ -203,6 +203,13 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  private clearInactivityTimer(): void {
+    if (this.tokenExpirationTimer) {
+      clearTimeout(this.tokenExpirationTimer);
+      this.tokenExpirationTimer = null;
+    }
+  }
+
   autoLogout(expirationDuration: number): void {
     if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
@@ -290,5 +297,52 @@ export class AuthService {
     } catch {
       // ignore
     }
+  }
+
+  // Méthodes pour la gestion des utilisateurs
+  updateUser(userId: number, userData: any): Observable<User> {
+    return this.http.patch<User>(`${this.API_URL}/users/${userId}/`, userData).pipe(
+      tap(updatedUser => {
+        // Mettre à jour l'utilisateur dans le stockage local
+        this.storageSet(this.USER_KEY, JSON.stringify(updatedUser));
+        this.currentUserSubject.next(updatedUser);
+      }),
+      catchError(error => {
+        console.error('Update user error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  resetUserPassword(userId: number): Observable<{ new_password: string }> {
+    return this.http.post<{ new_password: string }>(
+      `${this.API_URL}/users/${userId}/reset-password/`, 
+      {}
+    ).pipe(
+      catchError(error => {
+        console.error('Reset password error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deleteUser(userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.API_URL}/users/${userId}/`).pipe(
+      tap(() => {
+        // Si l'utilisateur supprimé est l'utilisateur actuel, on le déconnecte
+        if (this.currentUserValue?.id === userId) {
+          this.logout();
+        }
+      }),
+      catchError(error => {
+        console.error('Delete user error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Alias pour la méthode resetPassword utilisée dans le composant d'en-tête
+  resetPassword(userId: number): Observable<{ new_password: string }> {
+    return this.resetUserPassword(userId);
   }
 }

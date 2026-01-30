@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, map, retry, shareReplay, throwError, timeout, timer } from 'rxjs';
+import { Observable, BehaviorSubject, of, throwError, timer } from 'rxjs';
+import { catchError, map, retry, shareReplay, tap, timeout } from 'rxjs/operators';
 
 export interface PokemonListItem {
   name: string;
@@ -49,28 +50,59 @@ interface PokeApiPokemonResponse {
 })
 export class PokemonService {
   private apiUrl = 'https://pokeapi.co/api/v2';
-
-  private list$?: Observable<PokemonListItem[]>;
+  private listSubject = new BehaviorSubject<PokemonListItem[] | null>(null);
+  private listCache: PokemonListItem[] | null = null;
   private detailCache = new Map<string, Observable<PokemonDetail>>();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    // Chargement immédiat des données au démarrage
+    this.loadPokemonsInitial();
+  }
+
+  /**
+   * Charge les pokémons immédiatement au démarrage
+   */
+  private loadPokemonsInitial(): void {
+    this.http
+      .get<PokeApiListResponse>(`${this.apiUrl}/pokemon?limit=200&offset=0`)
+      .pipe(
+        map((res) =>
+          res.results.map((p) => ({
+            name: p.name,
+            image: this.getSpriteFromUrl(p.url)
+          }))
+        ),
+        tap((list) => {
+          this.listCache = list;
+          this.listSubject.next(list);
+        }),
+        catchError((error) => {
+          console.error('Erreur lors du chargement initial des pokémons:', error);
+          this.listSubject.next([]);
+          return of([]);
+        })
+      )
+      .subscribe();
+  }
 
   getPokemons(limit = 200): Observable<PokemonListItem[]> {
-    if (!this.list$) {
-      this.list$ = this.http
-        .get<PokeApiListResponse>(`${this.apiUrl}/pokemon?limit=${limit}&offset=0`)
-        .pipe(
-          map((res) =>
-            res.results.map((p) => ({
-              name: p.name,
-              image: this.getSpriteFromUrl(p.url)
-            }))
-          ),
-          shareReplay(1)
-        );
+    // Si on a déjà des données en cache, on les retourne immédiatement
+    if (this.listCache && this.listCache.length > 0) {
+      return of(this.listCache);
     }
 
-    return this.list$;
+    // Sinon, on s'abonne au BehaviorSubject
+    return new Observable(observer => {
+      const subscription = this.listSubject.subscribe(pokemons => {
+        if (pokemons !== null) {
+          observer.next(pokemons);
+          observer.complete();
+        }
+      });
+
+      // Nettoyage
+      return () => subscription.unsubscribe();
+    });
   }
 
   getPokemonDetail(name: string): Observable<PokemonDetail> {
