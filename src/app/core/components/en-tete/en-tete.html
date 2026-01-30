@@ -2,13 +2,19 @@
   <div class="logo">
     <a routerLink="/" class="logo-link">PokéMonde & pays</a>
   </div>
-  <nav class="main-nav">
+  
+  <!-- Bouton menu mobile -->
+  <button class="mobile-menu-toggle" (click)="toggleMobileMenu()" aria-label="Menu">
+    ☰
+  </button>
+  
+  <nav class="main-nav" [class.mobile-open]="mobileMenuOpen">
     <ul class="nav-list">
-      <li class="nav-item"><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">Accueil</a></li>
-      <li class="nav-item"><a routerLink="/pokemons" routerLinkActive="active" class="nav-link">Pokémons</a></li>
-      <li class="nav-item"><a routerLink="/pays" routerLinkActive="active" class="nav-link">Pays</a></li>
-      <li class="nav-item" *ngIf="(isAdmin$ | async)"><a routerLink="/users" routerLinkActive="active" class="nav-link">Utilisateurs</a></li>
-      <li class="nav-item" *ngIf="!(isLoggedIn$ | async)"><a routerLink="/login" routerLinkActive="active" class="nav-link">Connexion</a></li>
+      <li class="nav-item"><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link" (click)="closeMobileMenu()">Accueil</a></li>
+      <li class="nav-item"><a routerLink="/pokemons" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Pokémons</a></li>
+      <li class="nav-item"><a routerLink="/pays" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Pays</a></li>
+      <li class="nav-item" *ngIf="(isAdmin$ | async)"><a routerLink="/users" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Utilisateurs</a></li>
+      <li class="nav-item" *ngIf="!(isLoggedIn$ | async)"><a routerLink="/login" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Connexion</a></li>
       
       <!-- Menu utilisateur connecté -->
       <li class="nav-item user-menu" *ngIf="(isLoggedIn$ | async)">
@@ -21,7 +27,7 @@
             <span class="user-role">{{ (isAdmin$ | async) ? 'Administrateur' : 'Utilisateur' }}</span>
           </div>
           <div class="dropdown-divider"></div>
-          <a routerLink="/mon-compte" class="dropdown-item">
+          <a routerLink="/mon-compte" class="dropdown-item" (click)="closeMobileMenu()">
             👤 Mon profil
           </a>
           <button type="button" class="dropdown-item" (click)="resetMyPassword()">
@@ -35,4 +41,7 @@
       </li>
     </ul>
   </nav>
+  
+  <!-- Overlay pour le menu mobile -->
+  <div class="mobile-menu-overlay" [class.show]="mobileMenuOpen" (click)="closeMobileMenu()"></div>
 </header>

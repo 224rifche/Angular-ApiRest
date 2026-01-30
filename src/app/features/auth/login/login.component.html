@@ -1,23 +1,16 @@
 <div class="login-wrapper">
   <div class="login-container">
     <div class="login-card">
-      <!-- En-tête avec logo -->
+      <!-- En-tête simplifié -->
       <div class="login-header">
-        <div class="login-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </div>
         <h1>Connexion</h1>
-        <p class="login-subtitle">Accédez à votre espace personnel</p>
       </div>
 
       <!-- Formulaire de connexion -->
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
         <!-- Champ Email -->
         <div class="form-group">
-          <label for="email" class="form-label">Adresse email</label>
+          <label for="email" class="form-label">Email</label>
           <div class="input-group">
             <span class="input-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -34,17 +27,11 @@
               [ngClass]="{'input-error': loginForm.get('email')?.invalid && loginForm.get('email')?.touched}"
               required>
           </div>
-          <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-            Veuillez entrer une adresse email valide
-          </div>
         </div>
 
         <!-- Champ Mot de passe -->
         <div class="form-group">
-          <div class="form-label-group">
-            <label for="password" class="form-label">Mot de passe</label>
-            <a href="/forgot-password" class="forgot-password">Mot de passe oublié ?</a>
-          </div>
+          <label for="password" class="form-label">Mot de passe</label>
           <div class="input-group">
             <span class="input-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -67,25 +54,10 @@
               </svg>
             </button>
           </div>
-          <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-            Le mot de passe est requis
-          </div>
         </div>
-
-        <!-- Case à cocher Rester connecté -->
-        <label class="checkbox-container">
-          <input type="checkbox" formControlName="rememberMe" class="checkbox-input">
-          <span class="checkmark"></span>
-          <span class="checkbox-label">Rester connecté</span>
-        </label>
 
         <!-- Message d'erreur -->
         <div class="form-error" *ngIf="error">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
           {{ error }}
         </div>
 
@@ -102,7 +74,7 @@
 
       <!-- Lien vers l'inscription -->
       <div class="login-footer">
-        <p>Pas encore de compte ? <a [routerLink]="['/register']" [queryParams]="{ returnUrl: returnUrl }" class="signup-link">S'inscrire</a></p>
+        <p><a [routerLink]="['/register']" class="signup-link">S'inscrire</a></p>
       </div>
     </div>
   </div>

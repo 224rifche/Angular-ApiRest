@@ -17,6 +17,7 @@ export class EnTeteComponent {
   isAdmin$: Observable<boolean>;
   currentUser$: Observable<User | null>;
   showUserMenu = false;
+  mobileMenuOpen = false;
 
   constructor(
     private authService: AuthService,
@@ -43,14 +44,33 @@ export class EnTeteComponent {
     this.showUserMenu = !this.showUserMenu;
   }
 
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+    // Empêcher le scroll du body quand le menu est ouvert
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = this.mobileMenuOpen ? 'hidden' : '';
+    }
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen = false;
+    this.showUserMenu = false;
+    // Réactiver le scroll du body
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+    }
+  }
+
   logout(): void {
     this.showUserMenu = false;
+    this.closeMobileMenu();
     this.authService.logout();
     this.router.navigate(['/login']);
   }
 
   resetMyPassword(): void {
     this.showUserMenu = false;
+    this.closeMobileMenu();
     const user = this.authService.currentUserValue;
     if (!user) {
       alert('Utilisateur non connecté');

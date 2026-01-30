@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  padding: 2rem 1.5rem;
+  padding: 1rem 1.5rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -31,7 +31,7 @@
 .login-card {
   background: white;
   border-radius: 1.25rem;
-  padding: 2.5rem 2rem;
+  padding: 1.75rem 2rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
@@ -52,14 +52,14 @@
 /* ==================== En-tête ==================== */
 .login-header {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.75rem;
   position: relative;
 }
 
 .login-icon {
-  width: 5rem;
-  height: 5rem;
-  margin: 0 auto 1.5rem;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
   background: linear-gradient(135deg, var(--primary-color) 0%, #7c3aed 100%);
   border-radius: 1.25rem;
   display: flex;
@@ -76,16 +76,16 @@
 }
 
 .login-icon svg {
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   color: white;
   stroke-width: 1.5;
 }
 
 /* ==================== Styles du texte ==================== */
 .login-header h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.75rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-color);
   letter-spacing: -0.02em;
@@ -94,23 +94,23 @@
 
 .login-subtitle {
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 0.9rem;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* ==================== Formulaire ==================== */
 .login-form {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-color);
@@ -120,7 +120,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
 }
 
 .forgot-password {
@@ -163,13 +163,13 @@
 
 .form-input {
   flex: 1;
-  padding: 0.75rem 0;
+  padding: 0.625rem 0;
   padding-right: 3rem;
   border: none;
   background: transparent;
   color: var(--text-color);
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  line-height: 1.4;
   outline: none;
   border-radius: 0.75rem;
 }
@@ -222,10 +222,10 @@
   align-items: center;
   position: relative;
   padding-left: 2rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   cursor: pointer;
   user-select: none;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: var(--text-color);
 }
 
@@ -359,8 +359,9 @@
 .btn-block {
   display: flex;
   width: 100%;
-  padding: 1rem;
+  padding: 0.875rem;
   font-weight: 600;
+  margin-top: 0.5rem;
 }
 
 /* ==================== Animation de chargement ==================== */
@@ -383,9 +384,9 @@
 
 /* ==================== Pied de page ==================== */
 .login-footer {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   text-align: center;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: var(--text-muted);
 }
 

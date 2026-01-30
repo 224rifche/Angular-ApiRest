@@ -1,126 +1,93 @@
 <div class="pays-container">
-  <!-- Titre centré -->
-  <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">Liste des pays</h1>
+  <h1>Liste des pays</h1>
 
   <!-- Message de chargement -->
-  <div *ngIf="loading" class="text-center py-8">
-    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
-    <p class="mt-2 text-gray-600">Chargement des pays en cours...</p>
+  <div *ngIf="loading" class="loading">
+    <p>Chargement des pays...</p>
   </div>
 
   <!-- Message d'erreur -->
-  <div *ngIf="error && !loading" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+  <div *ngIf="error && !loading" class="error">
     <p>{{ error }}</p>
-    <p *ngIf="error.includes('connexion')" class="mt-1 text-sm">
+    <p *ngIf="error.includes('connexion')">
       Une nouvelle tentative sera effectuée automatiquement...
     </p>
   </div>
 
-  <div *ngIf="!loading && !error" class="mt-4">
-    <!-- Filtres avec labels et compteur -->
-    <div class="mb-8 flex flex-col md:flex-row gap-4 items-end">
-      <!-- Barre de recherche -->
-      <div class="flex-1">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Recherche</label>
+  <div *ngIf="!loading && !error">
+    <!-- Filtres -->
+    <div class="filters">
+      <div class="field">
+        <label>Recherche</label>
         <input
           type="text"
           [(ngModel)]="searchTerm"
           (ngModelChange)="onFiltersChange()"
           placeholder="Rechercher un pays..."
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
 
-      <!-- Filtre par région -->
-      <div class="w-full md:w-64">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Continent / Région</label>
+      <div class="field">
+        <label>Continent / Région</label>
         <select
           [(ngModel)]="selectedRegion"
           (ngModelChange)="onFiltersChange()"
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
         >
           <option value="">Tous</option>
           <option *ngFor="let region of regions" [value]="region">{{ region }}</option>
         </select>
       </div>
 
-      <!-- Compteur de pays -->
-      <div class="w-full md:w-auto">
-        <div class="text-right">
-          <span class="text-2xl font-bold text-gray-800">{{ filteredPays.length }}</span>
-          <span class="text-sm text-gray-600 ml-1">pays</span>
-        </div>
+      <div class="field field-inline">
+        <div class="count">{{ filteredPays.length }} pays</div>
       </div>
     </div>
 
     <!-- Aucun résultat -->
-    <div *ngIf="filteredPays.length === 0" class="text-center py-12">
-      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <h3 class="mt-2 text-lg font-medium text-gray-900">Aucun pays trouvé</h3>
-      <p class="mt-1 text-sm text-gray-500">Essayez de modifier vos critères de recherche.</p>
+    <div *ngIf="filteredPays.length === 0" class="error">
+      <p>Aucun pays trouvé. Essayez de modifier vos critères de recherche.</p>
     </div>
 
     <!-- Liste des pays -->
-    <div *ngIf="filteredPays.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
+    <div *ngIf="filteredPays.length > 0" class="pays-grid">
+      <a
         *ngFor="let pays of pagedPays; trackBy: trackPays"
         [routerLink]="['/pays', pays.cca3]"
         (mouseenter)="prefetchDetail(pays.cca3)"
-        class="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden hover:shadow-xl transition-shadow duration-200 cursor-pointer"
+        class="pays-card"
       >
-        <!-- Drapeau -->
-        <div class="w-full h-48 bg-white flex items-center justify-center p-6">
+        <div class="pays-flag">
           <img
             [src]="pays.flags.png"
             [alt]="'Drapeau de ' + pays.name.common"
-            class="w-full h-full object-contain"
             loading="lazy"
           />
         </div>
 
-        <!-- Informations -->
-        <div class="p-5 bg-white">
-          <h2 class="text-xl font-bold text-gray-900 mb-3">
-            {{ pays.name.common }}
-          </h2>
-          <p class="text-sm text-gray-700">
-            <span class="font-semibold">Région :</span> {{ pays.region || 'Non spécifiée' }}
-          </p>
+        <div class="pays-info">
+          <h2>{{ pays.name.common }}</h2>
+          <p>Région : {{ pays.region || 'Non spécifiée' }}</p>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Pagination -->
-    <div *ngIf="totalPages > 1" class="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="text-sm text-gray-500">
-        Page {{ currentPage }} sur {{ totalPages }} • {{ filteredPays.length }} pays
-      </div>
+    <div *ngIf="totalPages > 1" class="pagination">
+      <button
+        (click)="prevPage()"
+        [disabled]="currentPage === 1"
+      >
+        Précédent
+      </button>
 
-      <div class="flex items-center space-x-2">
-        <button
-          (click)="prevPage()"
-          [disabled]="currentPage === 1"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          Précédent
-        </button>
+      <span class="page-info">Page {{ currentPage }} sur {{ totalPages }}</span>
 
-        <button
-          (click)="nextPage()"
-          [disabled]="currentPage === totalPages"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Suivant
-          <svg class="-mr-1 ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
+      <button
+        (click)="nextPage()"
+        [disabled]="currentPage === totalPages"
+      >
+        Suivant
+      </button>
     </div>
   </div>
 </div>
