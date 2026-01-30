@@ -1,31 +1,20 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { catchError, finalize, map, shareReplay, tap } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
+import { map, catchError } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
 
 export interface User {
   id: number;
   username: string;
   email: string;
+  password: string;
   is_active: boolean;
   is_blocked: boolean;
   is_staff: boolean;
   last_login?: string;
-  date_joined?: string;
-}
-
-interface TokenResponse {
-  access: string;
-  refresh: string;
-  user: User;
-}
-
-interface RegisterResponse {
-  id: number;
-  username: string;
-  email: string;
+  date_joined: string;
+  token?: string;
 }
 
 @Injectable({
@@ -34,315 +23,383 @@ interface RegisterResponse {
 export class AuthService {
   private currentUserSubject: BehaviorSubject<User | null>;
   public currentUser$: Observable<User | null>;
-  private tokenExpirationTimer: any;
-  private refreshTimer: any;
-  private refreshing$?: Observable<string | null>;
-  private authChannel?: BroadcastChannel;
-  private readonly ACCESS_TOKEN_KEY = 'access_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
-  private readonly USER_KEY = 'current_user';
-  private readonly API_URL = 'http://localhost:8000/api/auth';
-  private readonly REFRESH_INTERVAL_MS = 30_000;
+  private inactivityTimer: any;
+  private authChannel: BroadcastChannel | null = null;
+  
+  // Clés de stockage
+  private readonly USERS_KEY = 'app_users';
+  private readonly CURRENT_USER_KEY = 'current_user';
+  private readonly INACTIVITY_TIMEOUT_MS = 5_000; // 5 secondes
+  
+  // Événements de synchronisation
+  private readonly AUTH_EVENTS = {
+    LOGIN: 'auth_login',
+    LOGOUT: 'auth_logout',
+    ACTIVITY: 'auth_activity',
+    BLOCK: 'user_blocked',
+    UNBLOCK: 'user_unblocked'
+  };
+
+  get token(): string | null {
+    const userJson = this.storageGet(this.CURRENT_USER_KEY);
+    if (!userJson) return null;
+    const user = JSON.parse(userJson);
+    return user.token || null;
+  }
+
+  // Ajoutez cette méthode pour la compatibilité
+  refreshAccessToken(): Observable<string | null> {
+    // Dans une implémentation réelle, vous pourriez vouloir rafraîchir le token ici
+    // Pour l'instant, on retourne simplement le token actuel
+    return of(this.token);
+  }
 
   constructor(
-    private http: HttpClient,
     private router: Router,
     @Inject(PLATFORM_ID) private platformId: object
   ) {
-    const userJson = this.storageGet(this.USER_KEY);
+    // Initialisation de l'admin par défaut
+    this.initializeDefaultAdmin();
+    
+    // Récupération de l'utilisateur connecté
+    const userJson = this.storageGet(this.CURRENT_USER_KEY);
     this.currentUserSubject = new BehaviorSubject<User | null>(
       userJson ? JSON.parse(userJson) : null
     );
     this.currentUser$ = this.currentUserSubject.asObservable();
     
-    if (this.isBrowser()) {
-      // Vérifier le token au chargement
-      this.checkTokenExpiration();
-      this.setupCrossTabSync();
-
-      if (this.isLoggedIn()) {
-        this.startRefreshTimer();
-      }
+    // Configuration de la synchronisation multi-onglets
+    this.setupCrossTabSync();
+    
+    // Démarrer le timer d'inactivité si un utilisateur est connecté
+    if (this.isLoggedIn()) {
+      this.resetInactivityTimer();
     }
   }
 
+  // ========== GESTION DU STOCKAGE ==========
   private isBrowser(): boolean {
     return isPlatformBrowser(this.platformId);
   }
 
   private storageGet(key: string): string | null {
-    if (!this.isBrowser()) {
-      return null;
-    }
+    if (!this.isBrowser()) return null;
     return localStorage.getItem(key);
   }
 
   private storageSet(key: string, value: string): void {
-    if (!this.isBrowser()) {
-      return;
-    }
+    if (!this.isBrowser()) return;
     localStorage.setItem(key, value);
   }
 
   private storageRemove(key: string): void {
-    if (!this.isBrowser()) {
-      return;
-    }
+    if (!this.isBrowser()) return;
     localStorage.removeItem(key);
   }
 
+  // ========== GESTION DES UTILISATEURS ==========
+  private initializeDefaultAdmin(): void {
+    const users = this.getAllUsers();
+    if (users.length === 0) {
+      const admin: User = {
+        id: 1,
+        username: 'admin',
+        email: 'admin@example.com',
+        password: 'admin123',
+        is_active: true,
+        is_blocked: false,
+        is_staff: true,
+        date_joined: new Date().toISOString()
+      };
+      this.storageSet(this.USERS_KEY, JSON.stringify([admin]));
+      console.log('✅ Admin créé avec succès!');
+      console.log('📧 Email: admin@example.com');
+      console.log('🔑 Mot de passe: admin123');
+    }
+  }
+
+  private getAllUsers(): User[] {
+    const usersJson = this.storageGet(this.USERS_KEY);
+    return usersJson ? JSON.parse(usersJson) : [];
+  }
+
+  private saveUsers(users: User[]): void {
+    this.storageSet(this.USERS_KEY, JSON.stringify(users));
+  }
+
+  // ========== AUTHENTIFICATION ==========
+  login(email: string, password: string, rememberMe: boolean = false): Observable<User> {
+    const users = this.getAllUsers();
+    const user = users.find(u => u.email === email && u.password === password);
+    
+    if (!user) {
+      return throwError(() => new Error('Email ou mot de passe incorrect'));
+    }
+    
+    if (!user.is_active || user.is_blocked) {
+      return throwError(() => new Error('Ce compte est désactivé ou bloqué'));
+    }
+    
+    // Mise à jour de la dernière connexion
+    user.last_login = new Date().toISOString();
+    this.updateUser(user.id, user);
+    
+    // Connexion de l'utilisateur
+    this.storageSet(this.CURRENT_USER_KEY, JSON.stringify(user));
+    this.currentUserSubject.next(user);
+    
+    // Réinitialisation du timer d'inactivité
+    this.resetInactivityTimer();
+    
+    // Notification des autres onglets
+    this.broadcastAuthEvent(this.AUTH_EVENTS.LOGIN);
+    
+    return of(user);
+  }
+
+  logout(): void {
+    // Déconnexion de l'utilisateur
+    this.storageRemove(this.CURRENT_USER_KEY);
+    this.currentUserSubject.next(null);
+    
+    // Arrêt du timer d'inactivité
+    this.clearInactivityTimer();
+    
+    // Notification des autres onglets
+    this.broadcastAuthEvent(this.AUTH_EVENTS.LOGOUT);
+    
+    // Redirection vers la page de connexion
+    this.router.navigate(['/login']);
+  }
+
+  register(email: string, username: string, password: string, password2: string): Observable<User> {
+    if (password !== password2) {
+      return throwError(() => new Error('Les mots de passe ne correspondent pas'));
+    }
+    
+    const users = this.getAllUsers();
+    
+    // Vérification de l'unicité de l'email
+    if (users.some(u => u.email === email)) {
+      return throwError(() => new Error('Cet email est déjà utilisé'));
+    }
+    
+    // Création du nouvel utilisateur
+    const newUser: User = {
+      id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
+      username,
+      email,
+      password,
+      is_active: true,
+      is_blocked: false,
+      is_staff: false,
+      date_joined: new Date().toISOString()
+    };
+    
+    // Sauvegarde de l'utilisateur
+    users.push(newUser);
+    this.saveUsers(users);
+    
+    // Connexion automatique
+    return this.login(email, password);
+  }
+
+  // ========== GESTION DU TEMPS D'INACTIVITÉ ==========
+  private resetInactivityTimer(): void {
+    this.clearInactivityTimer();
+    
+    if (this.isBrowser()) {
+      // Réinitialisation du timer à chaque activité utilisateur
+      window.onmousemove = this.resetInactivityTimer.bind(this);
+      window.onmousedown = this.resetInactivityTimer.bind(this);
+      window.onclick = this.resetInactivityTimer.bind(this);
+      window.onscroll = this.resetInactivityTimer.bind(this);
+      window.onkeypress = this.resetInactivityTimer.bind(this);
+      
+      // Démarrage du timer
+      this.inactivityTimer = setTimeout(() => {
+        this.logout();
+      }, this.INACTIVITY_TIMEOUT_MS);
+    }
+  }
+
+  private clearInactivityTimer(): void {
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+    }
+  }
+
+  // ========== SYNCHRONISATION MULTI-ONGLETS ==========
+  private setupCrossTabSync(): void {
+    if (!this.isBrowser() || !('BroadcastChannel' in window)) return;
+    
+    this.authChannel = new BroadcastChannel('auth_channel');
+    
+    this.authChannel.onmessage = (event) => {
+      const { type, data } = event.data;
+      
+      switch (type) {
+        case this.AUTH_EVENTS.LOGIN:
+          const user = JSON.parse(this.storageGet(this.CURRENT_USER_KEY) || 'null');
+          this.currentUserSubject.next(user);
+          this.resetInactivityTimer();
+          break;
+          
+        case this.AUTH_EVENTS.LOGOUT:
+          this.storageRemove(this.CURRENT_USER_KEY);
+          this.currentUserSubject.next(null);
+          this.clearInactivityTimer();
+          this.router.navigate(['/login']);
+          break;
+          
+        case this.AUTH_EVENTS.BLOCK:
+          if (this.currentUserValue?.id === data.userId) {
+            this.logout();
+          }
+          break;
+      }
+    };
+  }
+
+  private broadcastAuthEvent(type: string, data: any = {}): void {
+    if (this.authChannel) {
+      this.authChannel.postMessage({ type, data });
+    }
+  }
+
+  // ========== GESTION DES UTILISATEURS (ADMIN) ==========
+  getUsers(): Observable<User[]> {
+    return of(this.getAllUsers());
+  }
+
+  getUser(id: number): Observable<User | undefined> {
+    const user = this.getAllUsers().find(u => u.id === id);
+    return of(user);
+  }
+
+  createUser(userData: Omit<User, 'id'>): Observable<User> {
+    const users = this.getAllUsers();
+    const newUser = {
+      ...userData,
+      id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
+      date_joined: new Date().toISOString(),
+      last_login: undefined,
+      is_active: true,
+      is_blocked: false
+    };
+    
+    users.push(newUser);
+    this.saveUsers(users);
+    return of(newUser);
+  }
+
+  updateUser(id: number, userData: Partial<User>): Observable<User> {
+    const users = this.getAllUsers();
+    const index = users.findIndex(u => u.id === id);
+    
+    if (index === -1) {
+      return throwError(() => new Error('Utilisateur non trouvé'));
+    }
+    
+    const updatedUser = { ...users[index], ...userData };
+    users[index] = updatedUser;
+    this.saveUsers(users);
+    
+    // Mise à jour de l'utilisateur connecté si nécessaire
+    if (this.currentUserValue?.id === id) {
+      this.storageSet(this.CURRENT_USER_KEY, JSON.stringify(updatedUser));
+      this.currentUserSubject.next(updatedUser);
+    }
+    
+    return of(updatedUser);
+  }
+
+  deleteUser(id: number): Observable<void> {
+    const users = this.getAllUsers();
+    const index = users.findIndex(u => u.id === id);
+    
+    if (index === -1) {
+      return throwError(() => new Error('Utilisateur non trouvé'));
+    }
+    
+    // Vérification du dernier administrateur
+    if (users[index].is_staff && this.getAdminCount() <= 1) {
+      return throwError(() => new Error('Impossible de supprimer le dernier administrateur'));
+    }
+    
+    users.splice(index, 1);
+    this.saveUsers(users);
+    
+    // Déconnexion si l'utilisateur supprimé est l'utilisateur actuel
+    if (this.currentUserValue?.id === id) {
+      this.logout();
+    }
+    
+    return of(undefined);
+  }
+
+  toggleUserStatus(id: number): Observable<{ status: string; is_blocked: boolean }> {
+    return this.getUser(id).pipe(
+      map(user => {
+        if (!user) {
+          throw new Error('Utilisateur non trouvé');
+        }
+        
+        const isBlocked = !user.is_blocked;
+        this.updateUser(id, { is_blocked: isBlocked });
+        
+        // Déconnexion si l'utilisateur est bloqué
+        if (isBlocked && this.currentUserValue?.id === id) {
+          this.logout();
+        }
+        
+        // Notification des autres onglets
+        this.broadcastAuthEvent(
+          isBlocked ? this.AUTH_EVENTS.BLOCK : this.AUTH_EVENTS.UNBLOCK,
+          { userId: id }
+        );
+        
+        return {
+          status: isBlocked ? 'Utilisateur bloqué' : 'Utilisateur débloqué',
+          is_blocked: isBlocked
+        };
+      })
+    );
+  }
+
+  resetUserPassword(id: number): Observable<{ status: string }> {
+    return this.getUser(id).pipe(
+      map(user => {
+        if (!user) {
+          throw new Error('Utilisateur non trouvé');
+        }
+        
+        // Génération d'un mot de passe aléatoire
+        const newPassword = Math.random().toString(36).slice(-8);
+        this.updateUser(id, { password: newPassword });
+        
+        // En production, vous devriez envoyer un email avec le nouveau mot de passe
+        console.log(`Nouveau mot de passe pour ${user.email}: ${newPassword}`);
+        
+        return { status: 'Mot de passe réinitialisé avec succès' };
+      })
+    );
+  }
+
+  // ========== MÉTHODES UTILITAIRES ==========
   get currentUserValue(): User | null {
     return this.currentUserSubject.value;
   }
 
-  get token(): string | null {
-    return this.storageGet(this.ACCESS_TOKEN_KEY);
-  }
-
-  get refreshTokenValue(): string | null {
-    return this.storageGet(this.REFRESH_TOKEN_KEY);
-  }
-
-  login(email: string, password: string, rememberMe: boolean = false): Observable<User> {
-    return this.http.post<TokenResponse>(`${this.API_URL}/token/`, { email, password })
-      .pipe(
-        tap(response => {
-          this.setSession(response, rememberMe);
-          this.startRefreshTimer();
-          this.broadcastAuthEvent('login');
-        }),
-        map((response) => response.user),
-        catchError(error => {
-          console.error('Login error:', error);
-          return throwError(() => error);
-        })
-      );
-  }
-
-  register(email: string, password: string, password2: string): Observable<RegisterResponse> {
-    return this.http.post<RegisterResponse>(`${this.API_URL}/register/`, { email, password, password2 }).pipe(
-      catchError(error => {
-        console.error('Register error:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  private setSession(authResult: TokenResponse, rememberMe: boolean): void {
-    this.storageSet(this.ACCESS_TOKEN_KEY, authResult.access);
-    this.storageSet(this.REFRESH_TOKEN_KEY, authResult.refresh);
-    this.storageSet(this.USER_KEY, JSON.stringify(authResult.user));
-    this.currentUserSubject.next(authResult.user);
-
-    // Conserver la clé pour compatibilité, mais la session reste persistante dans tous les cas.
-    this.storageSet('rememberMe', rememberMe ? 'true' : 'false');
-  }
-
-  logout(): void {
-    const refresh = this.refreshTokenValue;
-    if (refresh) {
-      this.http.post(`${this.API_URL}/logout/`, { refresh_token: refresh }).subscribe({
-        next: () => this.clearAuthData(),
-        error: () => this.clearAuthData()
-      });
-      return;
-    }
-
-    this.clearAuthData();
-  }
-
-  refreshAccessToken(): Observable<string | null> {
-    if (this.refreshing$) {
-      return this.refreshing$;
-    }
-
-    const refresh = this.refreshTokenValue;
-    if (!refresh) {
-      return of(null);
-    }
-
-    this.refreshing$ = this.http.post<{ access: string; refresh?: string }>(`${this.API_URL}/token/refresh/`, { refresh }).pipe(
-      tap((response) => {
-        this.storageSet(this.ACCESS_TOKEN_KEY, response.access);
-        if (response.refresh) {
-          this.storageSet(this.REFRESH_TOKEN_KEY, response.refresh);
-        }
-      }),
-      map((response) => response.access),
-      catchError((error) => {
-        this.clearAuthData();
-        return throwError(() => error);
-      }),
-      finalize(() => {
-        this.refreshing$ = undefined;
-      }),
-      shareReplay(1)
-    );
-
-    return this.refreshing$;
-  }
-
-  private clearAuthData(): void {
-    this.storageRemove(this.ACCESS_TOKEN_KEY);
-    this.storageRemove(this.REFRESH_TOKEN_KEY);
-    this.storageRemove(this.USER_KEY);
-    this.storageRemove('rememberMe');
-    this.currentUserSubject.next(null);
-    
-    if (this.tokenExpirationTimer) {
-      clearTimeout(this.tokenExpirationTimer);
-    }
-
-    this.clearInactivityTimer();
-    
-    // Déclencher un événement personnalisé pour notifier les autres onglets
-    if (this.isBrowser()) {
-      window.localStorage.setItem('logout', Date.now().toString());
-    }
-    this.broadcastAuthEvent('logout');
-    this.router.navigate(['/login']);
-  }
-
-  private clearInactivityTimer(): void {
-    if (this.tokenExpirationTimer) {
-      clearTimeout(this.tokenExpirationTimer);
-      this.tokenExpirationTimer = null;
-    }
-  }
-
-  autoLogout(expirationDuration: number): void {
-    if (this.tokenExpirationTimer) {
-      clearTimeout(this.tokenExpirationTimer);
-    }
-    
-    this.tokenExpirationTimer = setTimeout(() => {
-      this.logout();
-    }, expirationDuration);
-  }
-
   isLoggedIn(): boolean {
-    return !!this.currentUserValue && !!this.token;
+    return !!this.currentUserValue;
   }
 
   isAdmin(): boolean {
-    return !!this.currentUserValue?.is_staff;
+    return this.currentUserValue?.is_staff || false;
   }
 
-  private checkTokenExpiration(): void {
-    // Vérifier si le token est expiré
-    // Implémentez la logique de vérification du token ici
-    
-    // Écouter les événements de déconnexion depuis d'autres onglets
-    if (this.isBrowser()) {
-      window.addEventListener('storage', (event) => {
-        if (event.key === 'logout' || (event.key === this.USER_KEY && !event.newValue)) {
-          this.clearAuthData();
-        }
-      });
-    }
-  }
-
-  private startRefreshTimer(): void {
-    if (!this.isBrowser()) {
-      return;
-    }
-    if (this.refreshTimer) {
-      clearInterval(this.refreshTimer);
-    }
-    this.refreshTimer = setInterval(() => {
-      if (!this.isLoggedIn()) {
-        return;
-      }
-      this.refreshAccessToken().subscribe({
-        next: () => {},
-        error: () => {}
-      });
-    }, this.REFRESH_INTERVAL_MS);
-  }
-
-  private stopRefreshTimer(): void {
-    if (this.refreshTimer) {
-      clearInterval(this.refreshTimer);
-      this.refreshTimer = null;
-    }
-  }
-
-  private setupCrossTabSync(): void {
-    if (!this.isBrowser()) {
-      return;
-    }
-
-    if ('BroadcastChannel' in window) {
-      this.authChannel = new BroadcastChannel('auth');
-      this.authChannel.onmessage = (msg) => {
-        if (msg?.data?.type === 'logout') {
-          this.clearAuthData();
-        }
-        if (msg?.data?.type === 'login') {
-          // Recharger l'utilisateur depuis le localStorage
-          const userJson = this.storageGet(this.USER_KEY);
-          this.currentUserSubject.next(userJson ? JSON.parse(userJson) : null);
-
-          if (this.isLoggedIn()) {
-            this.startRefreshTimer();
-          }
-        }
-      };
-    }
-  }
-
-  private broadcastAuthEvent(type: 'login' | 'logout'): void {
-    try {
-      this.authChannel?.postMessage({ type, at: Date.now() });
-    } catch {
-      // ignore
-    }
-  }
-
-  // Méthodes pour la gestion des utilisateurs
-  updateUser(userId: number, userData: any): Observable<User> {
-    return this.http.patch<User>(`${this.API_URL}/users/${userId}/`, userData).pipe(
-      tap(updatedUser => {
-        // Mettre à jour l'utilisateur dans le stockage local
-        this.storageSet(this.USER_KEY, JSON.stringify(updatedUser));
-        this.currentUserSubject.next(updatedUser);
-      }),
-      catchError(error => {
-        console.error('Update user error:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  resetUserPassword(userId: number): Observable<{ new_password: string }> {
-    return this.http.post<{ new_password: string }>(
-      `${this.API_URL}/users/${userId}/reset-password/`, 
-      {}
-    ).pipe(
-      catchError(error => {
-        console.error('Reset password error:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  deleteUser(userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.API_URL}/users/${userId}/`).pipe(
-      tap(() => {
-        // Si l'utilisateur supprimé est l'utilisateur actuel, on le déconnecte
-        if (this.currentUserValue?.id === userId) {
-          this.logout();
-        }
-      }),
-      catchError(error => {
-        console.error('Delete user error:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  // Alias pour la méthode resetPassword utilisée dans le composant d'en-tête
-  resetPassword(userId: number): Observable<{ new_password: string }> {
-    return this.resetUserPassword(userId);
+  private getAdminCount(): number {
+    return this.getAllUsers().filter(u => u.is_staff && !u.is_blocked).length;
   }
 }

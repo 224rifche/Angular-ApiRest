@@ -58,7 +58,7 @@ export class EnTeteComponent {
     }
 
     if (confirm('Voulez-vous vraiment réinitialiser votre mot de passe ?')) {
-      this.authService.resetPassword(user.id).subscribe({
+      this.authService.resetUserPassword(user.id).subscribe({
         next: () => {
           alert('Un email de réinitialisation a été envoyé à votre adresse email.');
         },

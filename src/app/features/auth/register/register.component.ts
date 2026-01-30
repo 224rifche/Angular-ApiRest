@@ -33,15 +33,22 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.registerForm = this.formBuilder.group({
-      email: ['', Validators.required],
-      password: ['', Validators.required],
+      username: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       password2: ['', Validators.required]
-    });
+    }, { validator: this.passwordMatchValidator });
 
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
   }
 
   get f() { return this.registerForm.controls; }
+
+  passwordMatchValidator(form: FormGroup) {
+    const password = form.get('password')?.value;
+    const password2 = form.get('password2')?.value;
+    return password === password2 ? null : { mismatch: true };
+  }
 
   onSubmit(): void {
     this.submitted = true;
@@ -53,11 +60,12 @@ export class RegisterComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
+    const username = this.f['username'].value;
     const email = this.f['email'].value;
     const password = this.f['password'].value;
     const password2 = this.f['password2'].value;
 
-    this.authService.register(email, password, password2)
+    this.authService.register(email, username, password, password2)
       .pipe(first())
       .subscribe({
         next: () => {

@@ -3,24 +3,91 @@
     <h1>Créer un compte</h1>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <!-- Champ Nom d'utilisateur -->
+      <div class="field">
+        <label for="username">Nom d'utilisateur</label>
+        <input 
+          id="username" 
+          type="text" 
+          formControlName="username" 
+          [class.invalid]="f['username'].invalid && (f['username'].dirty || f['username'].touched)"
+          required
+        />
+        <div class="error-message" *ngIf="f['username'].errors?.['required'] && (f['username'].dirty || f['username'].touched)">
+          Le nom d'utilisateur est requis
+        </div>
+      </div>
+
+      <!-- Champ Email -->
       <div class="field">
         <label for="email">Email</label>
-        <input id="email" type="email" formControlName="email" />
+        <input 
+          id="email" 
+          type="email" 
+          formControlName="email" 
+          [class.invalid]="f['email'].invalid && (f['email'].dirty || f['email'].touched)"
+          required
+          email
+        />
+        <div class="error-message" *ngIf="f['email'].errors?.['required'] && (f['email'].dirty || f['email'].touched)">
+          L'email est requis
+        </div>
+        <div class="error-message" *ngIf="f['email'].errors?.['email'] && (f['email'].dirty || f['email'].touched)">
+          Veuillez entrer un email valide
+        </div>
       </div>
 
+      <!-- Champ Mot de passe -->
       <div class="field">
         <label for="password">Mot de passe</label>
-        <input id="password" type="password" formControlName="password" />
+        <input 
+          id="password" 
+          type="password" 
+          formControlName="password" 
+          [class.invalid]="f['password'].invalid && (f['password'].dirty || f['password'].touched)"
+          required
+          minlength="8"
+        />
+        <div class="error-message" *ngIf="f['password'].errors?.['required'] && (f['password'].dirty || f['password'].touched)">
+          Le mot de passe est requis
+        </div>
+        <div class="error-message" *ngIf="f['password'].errors?.['minlength'] && (f['password'].dirty || f['password'].touched)">
+          Le mot de passe doit contenir au moins 8 caractères
+        </div>
       </div>
 
+      <!-- Confirmation du mot de passe -->
       <div class="field">
         <label for="password2">Confirmer le mot de passe</label>
-        <input id="password2" type="password" formControlName="password2" />
+        <input 
+          id="password2" 
+          type="password" 
+          formControlName="password2" 
+          [class.invalid]="(f['password2'].invalid || registerForm.hasError('mismatch')) && (f['password2'].dirty || f['password2'].touched)"
+          required
+        />
+        <div class="error-message" *ngIf="f['password2'].errors?.['required'] && (f['password2'].dirty || f['password2'].touched)">
+          La confirmation du mot de passe est requise
+        </div>
+        <div class="error-message" *ngIf="registerForm.hasError('mismatch') && (f['password2'].dirty || f['password2'].touched)">
+          Les mots de passe ne correspondent pas
+        </div>
       </div>
 
-      <div class="error" *ngIf="error">{{ error }}</div>
+      <!-- Message d'erreur général -->
+      <div class="error" *ngIf="error">
+        {{ error }}
+      </div>
 
-      <button class="btn" type="submit" [disabled]="loading">Créer le compte</button>
+      <!-- Bouton de soumission -->
+      <button 
+        class="btn" 
+        type="submit" 
+        [disabled]="loading || registerForm.invalid"
+      >
+        <span *ngIf="!loading">Créer le compte</span>
+        <span *ngIf="loading">Création en cours...</span>
+      </button>
     </form>
 
     <p class="alt">

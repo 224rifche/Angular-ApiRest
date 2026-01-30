@@ -1,0 +1,39 @@
+/* Styles pour le conteneur principal de l'application */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+/* Style pour le contenu principal */
+main {
+  flex: 1;
+  padding: 1rem;
+  background-color: #f8fafc; /* Couleur de fond légère pour le contenu */
+}
+
+/* Style pour les écrans mobiles */
+@media (max-width: 768px) {
+  main {
+    padding: 0.5rem;
+  }
+}
+
+/* Animation pour les transitions de route */
+:host {
+  display: block;
+  height: 100%;
+}
+
+/* Style pour le contenu quand le header est masqué */
+:host-context(.no-header) main {
+  padding-top: 0;
+}
+
+/* Assurez-vous que le html et le body prennent toute la hauteur */
+:host {
+  height: 100%;
+  display: block;
+}

@@ -527,9 +527,13 @@ export class MonCompteComponent implements OnInit {
       return;
     }
 
-    this.authService.resetPassword(this.currentUser.id).subscribe({
-      next: (result) => {
-        alert(`Votre nouveau mot de passe est: ${result.new_password}\n\nNotez-le bien, il ne sera plus affiché!\n\nVous allez être déconnecté.`);
+    this.authService.resetUserPassword(this.currentUser.id).subscribe({
+      next: (result: { status: string; new_password?: string }) => {
+        if (result.new_password) {
+          alert(`Votre nouveau mot de passe est: ${result.new_password}\n\nNotez-le bien, il ne sera plus affiché!\n\nVous allez être déconnecté.`);
+        } else {
+          alert('Un nouveau mot de passe a été généré. Veuillez vérifier votre email.');
+        }
         // Déconnecter l'utilisateur pour qu'il se reconnecte avec le nouveau mot de passe
         setTimeout(() => {
           this.authService.logout();
