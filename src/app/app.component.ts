@@ -29,9 +29,15 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(private layoutService: LayoutService) {}
 
   ngOnInit() {
+    console.log('Initialisation du composant racine');
     this.subscription.add(
       this.layoutService.showHeaderFooter$.subscribe(show => {
+        console.log('Changement de visibilité du header/footer:', show);
         this.showHeaderFooter = show;
+        // Forcer la détection des changements si nécessaire
+        setTimeout(() => {
+          console.log('Visibilité après détection des changements:', this.showHeaderFooter);
+        });
       })
     );
   }
