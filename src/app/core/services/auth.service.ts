@@ -40,6 +40,7 @@ export class AuthService {
     UNBLOCK: 'user_unblocked'
   };
 
+
   get token(): string | null {
     const userJson = this.storageGet(this.CURRENT_USER_KEY);
     if (!userJson) return null;
@@ -402,4 +403,5 @@ export class AuthService {
   private getAdminCount(): number {
     return this.getAllUsers().filter(u => u.is_staff && !u.is_blocked).length;
   }
+
 }
