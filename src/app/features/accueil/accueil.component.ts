@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { PaysService } from '../pays/liste-pays/pays.service';
+import { PokemonService } from '../pokemons/pokemon.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-accueil',
@@ -8,108 +11,181 @@ import { RouterLink } from '@angular/router';
   imports: [CommonModule, RouterLink],
   template: `
     <section class="home">
+      <!-- Hero Section -->
       <div class="hero">
         <div class="hero-content">
-          <p class="badge">Dashboard</p>
-          <h1>PokéMonde & Pays</h1>
-          <p class="subtitle">
-            Une vision claire de l'application: navigue entre les pays du monde et les pokémons.
+          <div class="hero-badge">
+            <span class="badge-icon">🌍</span>
+            <span class="badge-text">Plateforme Mondiale</span>
+          </div>
+          <h1 class="hero-title">
+            Explorez le <span class="highlight">Monde</span> & <span class="highlight">Pokémons</span>
+          </h1>
+          <p class="hero-subtitle">
+            Découvrez les pays du monde entier avec leurs drapeaux, cultures et données géographiques, 
+            tout en explorant l'univers fascinant des Pokémon.
           </p>
+          
+          <div class="hero-stats">
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.paysCount }}</div>
+              <div class="stat-label">Pays</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.pokemonCount }}</div>
+              <div class="stat-label">Pokémons</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.totalPopulation }}</div>
+              <div class="stat-label">Population</div>
+            </div>
+          </div>
 
           <div class="hero-actions">
-            <a class="btn primary" routerLink="/pays">Explorer les pays</a>
-            <a class="btn ghost" routerLink="/pokemons">Voir les pokémons</a>
-          </div>
-
-          <div class="stats">
-            <div class="stat">
-              <div class="stat-kpi">Pays</div>
-              <div class="stat-label">Drapeaux, régions, population</div>
-            </div>
-            <div class="stat">
-              <div class="stat-kpi">Pokémons</div>
-              <div class="stat-label">Liste et navigation</div>
-            </div>
-            <div class="stat">
-              <div class="stat-kpi">Rapide</div>
-              <div class="stat-label">Chargements optimisés</div>
-            </div>
+            <a class="btn btn-primary" routerLink="/pays">
+              <span class="btn-icon">🌍</span>
+              Explorer les Pays
+            </a>
+            <a class="btn btn-secondary" routerLink="/pokemons">
+              <span class="btn-icon">⚡</span>
+              Voir les Pokémons
+            </a>
           </div>
         </div>
 
-        <div class="hero-visual" aria-hidden="true">
-          <div class="blob"></div>
-          <div class="glass-card">
-            <div class="glass-title">Aperçu</div>
-            <div class="glass-row">
-              <span class="dot blue"></span>
-              <span class="glass-text">Accueil</span>
+        <div class="hero-visual">
+          <div class="floating-elements">
+            <div class="element element-1">🌍</div>
+            <div class="element element-2">⚡</div>
+            <div class="element element-3">🗺️</div>
+            <div class="element element-4">🎮</div>
+          </div>
+          <div class="hero-card">
+            <div class="card-header">
+              <div class="card-title">PokéMonde & Pays</div>
+              <div class="card-subtitle">Votre portail d'exploration</div>
             </div>
-            <div class="glass-row">
-              <span class="dot green"></span>
-              <span class="glass-text">Pays</span>
-            </div>
-            <div class="glass-row">
-              <span class="dot violet"></span>
-              <span class="glass-text">Pokémons</span>
+            <div class="card-content">
+              <div class="feature-item">
+                <span class="feature-icon">🌍</span>
+                <span class="feature-text">{{ stats.paysCount }} pays disponibles</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">🏳️</span>
+                <span class="feature-text">Drapeaux du monde entier</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">⚡</span>
+                <span class="feature-text">{{ stats.pokemonCount }} Pokémon répertoriés</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="section">
-        <h2>Que veux-tu faire ?</h2>
-        <p class="section-subtitle">Choisis un module pour commencer.</p>
+      <!-- Features Section -->
+      <div class="features-section">
+        <div class="section-header">
+          <h2 class="section-title">Fonctionnalités Principales</h2>
+          <p class="section-subtitle">Découvrez tout ce que notre plateforme vous offre</p>
+        </div>
 
-        <div class="cards">
-          <a class="card" routerLink="/pays">
-            <div class="card-icon">🌍</div>
-            <div class="card-body">
-              <h3>Pays</h3>
-              <p>Explore tous les pays, leurs drapeaux et les infos essentielles.</p>
-              <span class="card-cta">Ouvrir</span>
-            </div>
-          </a>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon-large">🌍</div>
+            <h3>Exploration Mondiale</h3>
+            <p>Parcourez les {{ stats.paysCount }} pays du monde avec leurs informations détaillées, drapeaux et données géographiques.</p>
+            <a class="feature-link" routerLink="/pays">
+              Explorer les pays →
+            </a>
+          </div>
 
-          <a class="card" routerLink="/pokemons">
-            <div class="card-icon">⚡</div>
-            <div class="card-body">
-              <h3>Pokémons</h3>
-              <p>Accède à la liste des pokémons et navigue dans le module.</p>
-              <span class="card-cta">Ouvrir</span>
-            </div>
-          </a>
+          <div class="feature-card">
+            <div class="feature-icon-large">⚡</div>
+            <h3>Univers Pokémon</h3>
+            <p>Accédez à une base de données complète des {{ stats.pokemonCount }} Pokémon avec leurs caractéristiques et capacités.</p>
+            <a class="feature-link" routerLink="/pokemons">
+              Voir les Pokémon →
+            </a>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-large">📊</div>
+            <h3>Données Riches</h3>
+            <p>Informations précises sur les populations ({{ stats.totalPopulation.toLocaleString() }} habitants), capitales, langues et bien plus encore.</p>
+            <a class="feature-link" routerLink="/pays">
+              Consulter les données →
+            </a>
+          </div>
         </div>
       </div>
 
-      <div class="section discover">
-        <div class="discover-head">
-          <h2>Découvrir</h2>
-          <p class="section-subtitle">Deux raccourcis rapides pour continuer.</p>
-        </div>
-
-        <div class="discover-grid">
-          <a class="panel panel-blue" routerLink="/pays">
-            <div class="panel-top">
-              <span class="panel-kicker">Module</span>
-              <h3>Pays</h3>
-            </div>
-            <p class="panel-text">Parcours la liste complète, avec drapeaux et infos clés.</p>
-            <span class="panel-cta">Aller aux pays</span>
-          </a>
-
-          <a class="panel panel-violet" routerLink="/pokemons">
-            <div class="panel-top">
-              <span class="panel-kicker">Module</span>
-              <h3>Pokémons</h3>
-            </div>
-            <p class="panel-text">Accède rapidement à la liste et au module de navigation.</p>
-            <span class="panel-cta">Aller aux pokémons</span>
-          </a>
+      <!-- CTA Section -->
+      <div class="cta-section">
+        <div class="cta-content">
+          <h2 class="cta-title">Prêt à commencer votre aventure ?</h2>
+          <p class="cta-subtitle">Rejoignez-nous dès maintenant et explorez un monde de possibilités</p>
+          <div class="cta-actions">
+            <a class="btn btn-primary btn-large" routerLink="/pays">
+              Commencer l'Exploration
+            </a>
+            <a class="btn btn-outline btn-large" routerLink="/pokemons">
+              Découvrir les Pokémon
+            </a>
+          </div>
         </div>
       </div>
     </section>
   `,
   styleUrls: ['./accueil.component.css']
 })
-export class AccueilComponent {}
+export class AccueilComponent implements OnInit, OnDestroy {
+  stats = {
+    paysCount: 0,
+    pokemonCount: 0,
+    totalPopulation: 0
+  };
+  
+  private subscriptions: Subscription[] = [];
+
+  constructor(
+    private paysService: PaysService,
+    private pokemonService: PokemonService
+  ) {}
+
+  ngOnInit() {
+    this.loadStats();
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  loadStats() {
+    // Charger les statistiques des pays
+    const paysSub = this.paysService.getPays().subscribe({
+      next: (pays: any[]) => {
+        this.stats.paysCount = pays.length;
+        this.stats.totalPopulation = pays.reduce((sum: number, pays: any) => sum + (pays.population || 0), 0);
+      },
+      error: (error: any) => {
+        console.error('Erreur lors du chargement des pays:', error);
+        this.stats.paysCount = 195; // Valeur par défaut
+        this.stats.totalPopulation = 7946313216; // Population mondiale approximative
+      }
+    });
+
+    // Charger les statistiques des Pokémon
+    const pokemonSub = this.pokemonService.getPokemons().subscribe({
+      next: (pokemons: any[]) => {
+        this.stats.pokemonCount = pokemons.length;
+      },
+      error: (error: any) => {
+        console.error('Erreur lors du chargement des Pokémon:', error);
+        this.stats.pokemonCount = 1010; // Valeur par défaut
+      }
+    });
+
+    this.subscriptions.push(paysSub, pokemonSub);
+  }
+}
