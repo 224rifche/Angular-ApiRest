@@ -21,8 +21,8 @@ export interface User {
   providedIn: 'root'
 })
 export class AuthService {
-  private currentUserSubject: BehaviorSubject<User | null>;
-  public currentUser$: Observable<User | null>;
+  private currentUserSubject!: BehaviorSubject<User | null>;
+  public currentUser$!: Observable<User | null>;
   private inactivityTimer: any;
   private authChannel: BroadcastChannel | null = null;
   
@@ -62,12 +62,8 @@ export class AuthService {
     // Initialisation de l'admin par défaut
     this.initializeDefaultAdmin();
     
-    // Récupération de l'utilisateur connecté
-    const userJson = this.storageGet(this.CURRENT_USER_KEY);
-    this.currentUserSubject = new BehaviorSubject<User | null>(
-      userJson ? JSON.parse(userJson) : null
-    );
-    this.currentUser$ = this.currentUserSubject.asObservable();
+    // Récupération de l'utilisateur connecté avec validation complète
+    this.restoreUserSession();
     
     // Configuration de la synchronisation multi-onglets
     this.setupCrossTabSync();
@@ -75,6 +71,47 @@ export class AuthService {
     // Démarrer le timer d'inactivité si un utilisateur est connecté
     if (this.isLoggedIn()) {
       this.resetInactivityTimer();
+    }
+  }
+
+  private restoreUserSession(): void {
+    const userJson = this.storageGet(this.CURRENT_USER_KEY);
+    let user: User | null = null;
+    
+    if (userJson) {
+      try {
+        user = JSON.parse(userJson);
+        
+        // Validation complète de l'utilisateur
+        if (user && user.is_active && !user.is_blocked) {
+          console.log('✅ Session utilisateur restaurée avec succès:', user.username);
+          console.log('📧 Email:', user.email);
+          console.log('🔑 Rôle:', user.is_staff ? 'Admin' : 'User');
+          console.log('📅 Dernière connexion:', user.last_login || 'Jamais');
+        } else {
+          console.log('❌ Session invalide - utilisateur désactivé ou bloqué');
+          user = null;
+          this.storageRemove(this.CURRENT_USER_KEY);
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la restauration de la session:', error);
+        console.log('🧹 Nettoyage des données corrompues...');
+        user = null;
+        this.storageRemove(this.CURRENT_USER_KEY);
+      }
+    } else {
+      console.log('ℹ️ Aucune session trouvée dans localStorage');
+    }
+    
+    // Initialisation du BehaviorSubject
+    this.currentUserSubject = new BehaviorSubject<User | null>(user);
+    this.currentUser$ = this.currentUserSubject.asObservable();
+    
+    // Log final de l'état
+    if (user) {
+      console.log('🎉 Utilisateur connecté et prêt à naviguer');
+    } else {
+      console.log('🔐 Aucun utilisateur connecté - redirection vers login prévue');
     }
   }
 
