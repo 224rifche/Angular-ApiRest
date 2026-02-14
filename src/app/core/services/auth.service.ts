@@ -29,7 +29,7 @@ export class AuthService {
   // Clés de stockage
   private readonly USERS_KEY = 'app_users';
   private readonly CURRENT_USER_KEY = 'current_user';
-  private readonly INACTIVITY_TIMEOUT_MS = 5_000; // 5 secondes
+  private readonly INACTIVITY_TIMEOUT_MS = 0; // Timeout complètement désactivé
   
   // Événements de synchronisation
   private readonly AUTH_EVENTS = {
@@ -68,10 +68,8 @@ export class AuthService {
     // Configuration de la synchronisation multi-onglets
     this.setupCrossTabSync();
     
-    // Démarrer le timer d'inactivité si un utilisateur est connecté
-    if (this.isLoggedIn()) {
-      this.resetInactivityTimer();
-    }
+    // Timeout désactivé - plus de timer d'inactivité
+    console.log('⏱️ Timeout d\'inactivité complètement désactivé');
   }
 
   private restoreUserSession(): void {
@@ -244,6 +242,12 @@ export class AuthService {
 
   // ========== GESTION DU TEMPS D'INACTIVITÉ ==========
   private resetInactivityTimer(): void {
+    // Timeout complètement désactivé - ne fait absolument rien
+    if (this.INACTIVITY_TIMEOUT_MS === 0) {
+      return;
+    }
+    
+    // Ce code ne sera jamais exécuté car le timeout est à 0
     this.clearInactivityTimer();
     
     if (this.isBrowser()) {
